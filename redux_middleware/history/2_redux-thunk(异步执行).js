@@ -2,7 +2,7 @@
 * @Author: duqinzhi
 * @Date:   2018-07-04 10:16:28
 * @Last Modified by:   duqinzhi
-* @Last Modified time: 2018-07-04 17:10:14
+* @Last Modified time: 2018-07-04 18:07:20
 */
 import {createStore,applyMiddleware} from './redux.js';
 
@@ -21,13 +21,18 @@ let counter = (state=0,action)=>{
 	
 }
 //中间件
-let thunk = store => next => action =>{
-	if(typeof action === 'function'){
-		return action(next);   //如果异步执行  那么需要执行action，把dispatch传进去
-	}
-	return next(action);   //异步不满足的时候 ，直接就到用dispatch 方法就行
+let logger1 = store=>next=>action=>{
+	console.log('logger1 before',store.getState());
+	next(action);
+	console.log('logger1 aftrer',store.getState());
 }
-let store = applyMiddleware(thunk)(createStore)(counter);   
+let logger2 = store=>next=>action=>{
+	console.log('logger2 before',store.getState());
+	next(action);
+	console.log('logger2 after',store.getState());
+}
+//如果放入多个中间件，需要从左向右一次执行
+let store = applyMiddleware(logger1,logger2)(createStore)(counter);   
 //这个store是返回的含有新的dispatch的store对象
 //给applyMiddleware函数   传进去logger返回一个函数   传进去createStore返回一个函数   传进去reducer
 
@@ -36,11 +41,7 @@ store.subscribe(function(){
 	console.log(store.getState());
 })
 
-store.dispatch(function(dispatch){   //异步执行（3秒后才执行dispatch)
-	setTimeout(function(){   //这是action给里面穿了dispatch
-		dispatch({type:'ADD'})
-	},3000)
-});  
+store.dispatch({type:'ADD'});  
 
 
 /* 实现异步的中间件
